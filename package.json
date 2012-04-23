@@ -1,0 +1,14 @@
+{
+  "name": "bobsled",
+  "description": "a fast, simple app framework prone to violent crashes",
+  "version": "0.0.1",
+  "author": "Ken Woodruff <ken.woodruff@gmail.com>",
+  "repository": "http://github.com/femto113/node-bobsled.git",
+  "main": "bobsled.js",
+  "license": "MIT",
+  "dependencies": {
+    "dot": ">= 0.1.7",
+    "getpw": ">= 0.0.1"
+  },
+  "engines": { "node": ">= 0.4.7" }
+}
