@@ -23,13 +23,13 @@ or
 
 ## Example
 
-  var Bobsled = require("./bobsled").Bobsled;
+    var Bobsled = require("./bobsled").Bobsled;
 
-  var bobsled = new Bobsled();
-  bobsled.routes.GET["/helloworld"] = {
-    "*": function (pathinfo, request, response) {
-          response.writeHead(200, {"content-type": "text/plain"});
-          response.end("helloworld");
-        }
-  };
-  bobsled.start();
+    var bobsled = new Bobsled();
+    bobsled.routes.GET["/helloworld"] = {
+      "*": function (pathinfo, request, response) {
+            response.writeHead(200, {"content-type": "text/plain"});
+            response.end("helloworld");
+          }
+    };
+    bobsled.start();
