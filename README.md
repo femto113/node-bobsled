@@ -1,5 +1,7 @@
 # bobsled
 
+![i can haz framework](http://blog.nodejitsu.com/ibm-doesnt-care-about-nodejs-people/framework.png)
+
 Like every other Rails dev teaching themselves node I decided my first project would
 be to write my own app framework.  Since it took me a day longer to discover
 [express](http://expressjs.com/) than it should have I actually got it working
