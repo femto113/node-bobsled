@@ -1,4 +1,4 @@
-# bobsled
+# bobsled [![Build Status](https://secure.travis-ci.org/femto113/node-bobsled.png)](http://travis-ci.org/femto113/node-bobsled)
 
 ![i can haz framework](http://blog.nodejitsu.com/ibm-doesnt-care-about-nodejs-people/framework.png)
 
