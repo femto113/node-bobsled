@@ -1,7 +1,7 @@
 {
   "name": "bobsled",
   "description": "a fast, simple app framework prone to violent crashes",
-  "version": "0.0.2",
+  "version": "0.0.3",
   "author": "Ken Woodruff <ken.woodruff@gmail.com>",
   "repository": "http://github.com/femto113/node-bobsled.git",
   "main": "bobsled.js",
