@@ -11,7 +11,7 @@
   "license": "MIT",
   "dependencies": {
     "dot": ">= 0.1.7",
-    "getpw": ">= 0.0.1"
+    "getpw": ">= 0.0.2"
   },
   "engines": { "node": ">= 0.4.7" }
 }
