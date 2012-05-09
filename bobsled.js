@@ -106,14 +106,22 @@ console.log("static", filename, "notFound");
 
   this.route = function(request, response, body) {
     var parsed_url = url.parse(request.url);
-    var dirname = path.dirname(parsed_url.path),
-        extname = path.extname(parsed_url.path),
-        basename = path.basename(parsed_url.path, extname) || "index", // TODO: configurable default
-        method = request.method;
+    var method = request.method,
+        dirname = path.dirname(parsed_url.path).replace(/\/*$/, ''), // strip any trailing slash
+        extname = path.extname(parsed_url.path), // TODO: should have a default for extname?
+        basename = path.basename(parsed_url.path, extname) || "index"; // TODO: configurable default basename?
 
-    var controller = (this.routes && this.routes[method] && this.routes[method][dirname]) ?
-            this.routes[method][dirname][(this.routes[method][dirname][basename] ? basename : "*")] : this.controllers.notFound;
-console.log(method, dirname, basename, this.routes);
+    console.log("%s %s/%s%s", method, dirname, basename, extname); // TODO: add an on/off switch for this logging
+
+    // TODO: add a switch for case (in)sensitivity
+    // dirname = dirname.toLowerCase();
+    // basename = basename.toLowerCase();
+
+    var controller = (
+        this.routes[method]
+        && this.routes[method][dirname]
+        && this.routes[method][dirname][(this.routes[method][dirname][basename] ? basename : "*")]
+      ) || this.controllers.notFound;
     return controller({ dirname: dirname, basename: basename, extname: extname }, request, response, body);
   };
 }
