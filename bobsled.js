@@ -105,11 +105,11 @@ console.log("static", filename, "notFound");
   };
 
   this.route = function(request, response, body) {
-    var parsed_url = url.parse(request.url);
+    var parsed_url = url.parse(request.url, true);
     var method = request.method,
-        dirname = path.dirname(parsed_url.path).replace(/\/*$/, ''), // strip any trailing slash
-        extname = path.extname(parsed_url.path), // TODO: should have a default for extname?
-        basename = path.basename(parsed_url.path, extname) || "index"; // TODO: configurable default basename?
+        dirname = path.dirname(parsed_url.pathname).replace(/\/*$/, ''), // strip any trailing slash
+        extname = path.extname(parsed_url.pathname), // TODO: should have a default for extname?
+        basename = path.basename(parsed_url.pathname, extname) || "index"; // TODO: configurable default basename?
 
     console.log("%s %s/%s%s", method, dirname, basename, extname); // TODO: add an on/off switch for this logging
 
@@ -122,7 +122,7 @@ console.log("static", filename, "notFound");
         && this.routes[method][dirname]
         && this.routes[method][dirname][(this.routes[method][dirname][basename] ? basename : "*")]
       ) || this.controllers.notFound;
-    return controller({ dirname: dirname, basename: basename, extname: extname }, request, response, body);
+    return controller({ dirname: dirname, basename: basename, extname: extname, query: parsed_url.query }, request, response, body);
   };
 }
 
