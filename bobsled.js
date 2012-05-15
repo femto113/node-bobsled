@@ -1,9 +1,7 @@
-var doT =  require("dot")
-    , fs =   require("fs")
-    , url =  require("url")
-    , path = require("path")
-    , getpw = require("getpw")
-    ;
+var fs = require("fs"), url =  require("url"), path = require("path");
+
+// TODO: rename pathinfo arg to controllers, clean up interface to templates
+// TODO: move template_config/compiler stuff into a recipes folder (and env?)
 
 function Bobsled(opts)
 {
@@ -11,8 +9,14 @@ function Bobsled(opts)
 
   if (typeof(opts) == "undefined") opts = {};
 
-  this.port = ("port" in opts) ? opts.port : 8085 // reads like BOBS on an old calculator
+  this.port = ("port" in opts) ? opts.port : 8085; // reads like BOBS on an old calculator
 
+  if ("env" in opts) this.env = opts.env;
+
+  this.template_compiler = ("template_compiler" in opts) ? opts.template_compiler : function () { throw new Error("no template compiler configured"); };
+
+  // TODO: support other template engines besides doT?
+  //
   this.template_config = {
     evaluate:    /<%([\s\S]+?)%>/g, // some erb like delimiters
     interpolate: /<%=([\s\S]+?)%>/g,
@@ -28,21 +32,18 @@ function Bobsled(opts)
     for (var template_name in this.templates) this.templates[template_name].compile();
   };
 
-
   this.controllers = {
     template: function(pathinfo, request, response) {
       var template_name = pathinfo.basename || "index"
       if (template_name in this.templates) {
-        this.templateResponder(template_name, {request: request}, response);
+        this.templateResponder(template_name, pathinfo, response);
       } else {
         this.emit("notFound", pathinfo, request, response);
       }
     }.bind(this),
     "static": function(pathinfo, request, response) {
       var filename = "." + pathinfo.dirname + "/" + pathinfo.basename + pathinfo.extname;
-console.log("static", filename);
       if (!fs.statSync(filename).isFile()) {
-console.log("static", filename, "notFound");
         this.emit("notFound", pathinfo, request, response);
       } else {
         response.writeHead(200, {"content-type": "text/css"}); // HACK TODO mimetype
@@ -58,20 +59,6 @@ console.log("static", filename, "notFound");
       var data = { provider: require("./whereami").provider() };
       response.end(JSON.stringify(data, null, "  "));
     },
-    env: function(pathinfo, request, response) {
-      // TODO switch to HTML on extname
-      response.writeHead(200, {"content-type": "application/json"});
-      var data = { env: process.env, uid: process.getuid(), os: {} };
-      var os = require("os");
-      ["hostname", "type", "platform", "arch", "release", "networkInterfaces", "cpus"].forEach(function (a) {
-        data.os[a] = os[a]();
-      });
-      if (process.env.HOME) {
-        data.home = fs.readdirSync(process.env.HOME);
-      }
-      data.passwd = getpw.getpwuid(data.uid);
-      response.end(JSON.stringify(data, null, "  "));
-    },
     notFound: function (pathinfo, request, response) {
       if ("404" in this.templates) {
         this.templateResponder("404", { statusCode: 404, pathinfo: pathinfo, request: request }, response);
@@ -82,27 +69,48 @@ console.log("static", filename, "notFound");
     }.bind(this)
   };
 
-  this.on("notFound", this.controllers.notFound);
+  this.routes = {
+    GET: {
+      "/": {
+        "whereami": this.controllers.whereami, // TODO: config/recipe
+        "favicon": this.controllers.favicon,
+        "*": this.controllers.template
+      },
+    },
+    POST: { }
+  };
+
+  // setup static routes
+  if (true) { // TODO: opts.static? (could pass in path?)
+    var static_folders = {"css": "/css", "img": "/img", "js": "/js"}; // TODO: pass in opts?
+    for (folder in static_folders) {
+      if (path.existsSync(folder) && fs.statSync(folder).isDirectory()) {
+        this.routes.GET[static_folders[folder]] = { "*": this.controllers.static };
+      }
+    }
+  }
+
+  if (opts.env) {
+    // TODO: make path part of config?
+    this.routes.GET["/"]["env"] = function(pathinfo, request, response) {
+      response.writeHead(200, {"content-type": "application/json"}); // TODO switch to HTML on extname
+      var data = { env: process.env, uid: process.getuid(), os: {} };
+      var os = require("os");
+      ["hostname", "type", "platform", "arch", "release", "networkInterfaces", "cpus"].forEach(function (a) {
+        data.os[a] = os[a]();
+      });
+      if (process.env.HOME) data.home = fs.readdirSync(process.env.HOME);
+      // data.passwd = require("getpw").getpwuid(data.uid); (TODO: pass to constructor to eliminate hard dep)
+      response.end(JSON.stringify(data, null, "  "));
+    }
+  }
 
   this.redirect = function(new_url, response) {
       response.writeHead(302, { 'Location': new_url });
       response.end();
   };
 
-  this.routes = {
-    GET: {
-      "/": {
-        "env": this.controllers.env,
-        "whereami": this.controllers.whereami,
-        "favicon": this.controllers.favicon,
-        "*": this.controllers.template
-      },
-      "/bootstrap/css": {
-        "*": this.controllers.static
-      }
-    },
-    POST: { }
-  };
+  this.on("notFound", this.controllers.notFound);
 
   this.route = function(request, response, body) {
     var parsed_url = url.parse(request.url, true);
@@ -142,11 +150,13 @@ Bobsled.prototype.html_encode = Bobsled.prototype.h = function (s) {
 Bobsled.prototype.url_encode = Bobsled.prototype.u = function (s) { return encodeURIComponent(s); }
 
 Bobsled.prototype.addTemplate = function(opts) {
-  if (typeof(opts) == "string") opts = { filename: opts };
+  if (typeof(opts) == "string") opts = { filename: opts, compiler: this.template_compiler };
   if (!("config" in opts)) opts.config = this.template_config;
   var extname = path.extname(opts.filename),
       basename = path.basename(opts.filename, extname);
+  // TODO: keep popping extensions and processing them until we get to one that resolves to the engine?
 
+  // TODO: support paths (or / in template name?)
   this.templates[basename] = new Template(opts);
 };
 
@@ -175,9 +185,14 @@ Bobsled.prototype.start = function() {
 
 function Template(opts)
 {
-  this.config = opts.config;
+  this.compiler = opts.compiler; // takes two args, template as string a config object
+  this.config = opts.config; // will be passed as second arg to compiler
 
-  if (!("filename" in opts) || !fs.statSync(opts.filename).isFile()) {
+  if (!opts.filename) {
+    throw new Error("filename required");
+  }
+
+  if (!path.existsSync(opts.filename) || !fs.statSync(opts.filename).isFile()) {
     throw new Error("template file not found: " + opts.filename);
   }
 
@@ -198,8 +213,7 @@ Template.prototype = Object.create(require('events').EventEmitter.prototype);
 Template.prototype.constructor = Template;
 
 Template.prototype.compile = function() {
-  // TODO: support other template engines?
-  this.render = doT.template(fs.readFileSync(this.filename, "utf8"), this.config);
+  this.render = this.compiler(fs.readFileSync(this.filename, "utf8"), this.config);
   this.emit("compiled", this);
 }
 
@@ -211,4 +225,5 @@ Template.prototype.render = function(data, context) {
 if (exports) {
   exports.Bobsled = Bobsled;
   exports.Template = Template;
+  exports.recipes = require("./recipes");
 }
