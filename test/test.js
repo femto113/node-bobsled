@@ -10,7 +10,7 @@ var slugs = ["hello earth", "The Éx†èñdéd Chàrácte® Test™"];
 
 var server = new bobsled.Bobsled(opts);
 server.routes.GET[path] = {
-  "*": function (pathinfo, request, response) {
+  "*.json": function (pathinfo, request, response) {
     server.jsonResponder(slugs, response);
   }
 };
@@ -29,7 +29,7 @@ server.start();
 process.nextTick(function () {
   // now fire off some client requests and validate the responses
   var http = require("http"), assert = require("assert"), url = require("url");
-  var tests = [ { hostname: "localhost", port: opts.port, path: path + "/whatever.anything" } ];
+  var tests = [ { hostname: "localhost", port: opts.port, path: path + "/whatever.json" } ];
   // TODO test static routing
   if ("template_config" in opts) {
     // test templates

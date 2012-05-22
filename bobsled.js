@@ -54,11 +54,6 @@ function Bobsled(opts)
       response.writeHead(200, {"content-type": "image/x-icon"}); // TODO: set expires
       fs.readFile("favicon.ico", function (err, data) { response.end(data); });
     },
-    whereami: function(pathinfo, request, response) {
-      response.writeHead(200, {"content-type": "application/json"});
-      var data = { provider: require("./whereami").provider() };
-      response.end(JSON.stringify(data, null, "  "));
-    },
     notFound: function (pathinfo, request, response) {
       if ("404" in this.templates) {
         this.templateResponder("404", { statusCode: 404, pathinfo: pathinfo, request: request }, response);
@@ -69,12 +64,12 @@ function Bobsled(opts)
     }.bind(this)
   };
 
+  // TODO: config/recipe for default routes
   this.routes = {
     GET: {
       "/": {
-        "whereami": this.controllers.whereami, // TODO: config/recipe
-        "favicon": this.controllers.favicon,
-        "*": this.controllers.template
+        "favicon.ico": this.controllers.favicon,
+        "*.html": this.controllers.template
       },
     },
     POST: { }
@@ -125,11 +120,17 @@ function Bobsled(opts)
     // dirname = dirname.toLowerCase();
     // basename = basename.toLowerCase();
 
-    var controller = (
-        this.routes[method]
-        && this.routes[method][dirname]
-        && this.routes[method][dirname][(this.routes[method][dirname][basename] ? basename : "*")]
-      ) || this.controllers.notFound;
+    var controller = this.controllers.notFound;
+    if (this.routes[method] && this.routes[method][dirname]) {
+       // find the most specific match possible
+       var candidate, candidates = [basename + extname, basename, "*" + extname, "*"];
+       while (candidate = candidates.shift()) {
+         if (candidate in this.routes[method][dirname]) {
+             controller = this.routes[method][dirname][candidate];
+             break; // while
+         }
+       }
+    }
     return controller({ dirname: dirname, basename: basename, extname: extname, query: parsed_url.query }, request, response, body);
   };
 }
