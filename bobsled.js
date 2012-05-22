@@ -165,12 +165,17 @@ Bobsled.prototype.partial = function (template_name, data) {
   return this.templates[template_name].render(data, this);
 };
 
-// TODO: cook the request a bit before passing to templates (perhaps just give them query string?)
 Bobsled.prototype.templateResponder = function(template_name, data, response) {
   var body = this.partial(template_name, data);
   var statusCode = data && data.statusCode || 200;
-  response.writeHead(statusCode, {"content-type": "text/html", "content-length": body.length});
+  response.writeHead(statusCode, {"content-type": "text/html; charset=utf-8"}); // TODO: "content-length"
   response.end(body);
+};
+
+Bobsled.prototype.jsonResponder = function(data, response) {
+  var json = JSON.stringify(data, null, 2);
+  response.writeHead(200, {"content-type": "application/json; charset=utf-8"}); // TODO: "content-length"
+  response.end(json);
 };
 
 Bobsled.prototype.start = function() {

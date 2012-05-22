@@ -6,13 +6,12 @@ var opts = bobsled.recipes.bobsled();
 // start up our test server (on a random port if not given in environment)
 opts.port = process.env.PORT || Math.floor(Math.random() * (65536 - 1025)) + 1025;
 var path = "/" + Math.floor(Math.random() * 1024 * 1024).toString(32);
-var slug = "hello earth";
+var slugs = ["hello earth", "The Éx†èñdéd Chàrácte® Test™"];
 
 var server = new bobsled.Bobsled(opts);
 server.routes.GET[path] = {
   "*": function (pathinfo, request, response) {
-    response.writeHead(200, {"content-type": "text/plain"});
-    response.end(slug);
+    server.jsonResponder(slugs, response);
   }
 };
 if ("template_config" in opts) {
@@ -52,7 +51,9 @@ process.nextTick(function () {
       res.on("error", function(e) { assert.ifError(e); });
       res.on("data", function (chunk) { body += chunk; });
       res.on("end", function () {
-        assert.ok(body.match(slug), 'slug "' + slug + '" not found in body\n' + body);
+        slugs.forEach(function (slug) {
+          assert.ok(body.match(slug), 'slug "' + slug + '" not found in body\n' + body);
+        });
         nextTest();
       });
     });
