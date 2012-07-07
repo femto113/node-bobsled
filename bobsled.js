@@ -79,7 +79,7 @@ function Bobsled(opts)
   if (true) { // TODO: opts.static? (could pass in path?)
     var static_folders = {"css": "/css", "img": "/img", "js": "/js"}; // TODO: pass in opts?
     for (folder in static_folders) {
-      if (path.existsSync(folder) && fs.statSync(folder).isDirectory()) {
+      if (fs.existsSync(folder) && fs.statSync(folder).isDirectory()) {
         this.routes.GET[static_folders[folder]] = { "*": this.controllers.static };
       }
     }
@@ -198,7 +198,7 @@ function Template(opts)
     throw new Error("filename required");
   }
 
-  if (!path.existsSync(opts.filename) || !fs.statSync(opts.filename).isFile()) {
+  if (!fs.existsSync(opts.filename) || !fs.statSync(opts.filename).isFile()) {
     throw new Error("template file not found: " + opts.filename);
   }
 
