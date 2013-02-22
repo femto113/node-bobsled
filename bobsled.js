@@ -12,6 +12,8 @@ function Bobsled(opts)
   this.port = ("port" in opts) ? opts.port : 8085; // reads like BOBS on an old calculator
 
   if ("env" in opts) this.env = opts.env;
+  if ("uid" in opts) this.uid = opts.uid;
+  if ("gid" in opts) this.gid = opts.gid;
 
   this.template_compiler = ("template_compiler" in opts) ? opts.template_compiler : function () { throw new Error("no template compiler configured"); };
 
@@ -79,7 +81,7 @@ function Bobsled(opts)
   if (true) { // TODO: opts.static? (could pass in path?)
     var static_folders = {"css": "/css", "img": "/img", "js": "/js"}; // TODO: pass in opts?
     for (folder in static_folders) {
-      if (path.existsSync(folder) && fs.statSync(folder).isDirectory()) {
+      if (fs.existsSync(folder) && fs.statSync(folder).isDirectory()) {
         this.routes.GET[static_folders[folder]] = { "*": this.controllers.static };
       }
     }
@@ -139,6 +141,16 @@ function Bobsled(opts)
 Bobsled.prototype = Object.create(require('http').Server.prototype);
 Bobsled.prototype.constructor = Bobsled;
 
+Bobsled.prototype.process_user = function () {
+  var pwuid = "";
+  try {
+    pwuid = require("getpw").getpwuid(process.getuid()).pw_name;
+  } catch (e) {
+    pwuid = "user id " + process.getuid();
+  }
+  return pwuid;
+}
+     
 // provide access to builtin modules that may needed by templates
 Bobsled.prototype.util = require("util");
 Bobsled.prototype.querystring = require("querystring");
@@ -185,8 +197,12 @@ Bobsled.prototype.start = function() {
     if (request.method == "POST") request.on("data", function (chunk) { body += chunk; });
     request.on("end", function () { this.route(request, response, request.method == "POST" && body); }.bind(this));
   });
+  this.once("listening", function () {
+      if (this.uid) process.setuid(this.uid);
+      if (this.gid) process.setgid(this.gid);
+      console.log("Bobsled now running as " +  this.process_user() + " and listening at port " + this.port);
+  });
   this.listen(this.port);
-  console.log("Bobsled server now listening at port " + this.port);
 };
 
 function Template(opts)
@@ -198,7 +214,7 @@ function Template(opts)
     throw new Error("filename required");
   }
 
-  if (!path.existsSync(opts.filename) || !fs.statSync(opts.filename).isFile()) {
+  if (!fs.existsSync(opts.filename) || !fs.statSync(opts.filename).isFile()) {
     throw new Error("template file not found: " + opts.filename);
   }
 

@@ -56,6 +56,10 @@ is that it uses the the awesomely fast [doT.js](http://olado.github.com/doT/) te
 (if it's been installed), but even that it perverts with ASP style delimiters (<% %>) instead of
 mustache.
 
+## Changes
+
+- 0.2.0 added setuid/setgid functionality (allows downgrade of privilege after starting on restricted port)
+
 ## TODO
 
 - more recipes, document recipe creation
