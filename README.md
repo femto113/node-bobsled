@@ -58,6 +58,7 @@ mustache.
 
 ## Changes
 
+- 0.2.1 fixed a bug with routes for the root (/) directory (thanks to @philion)
 - 0.2.0 added setuid/setgid functionality (allows downgrade of privilege after starting on restricted port)
 
 ## TODO

@@ -118,6 +118,8 @@ function Bobsled(opts)
 
     console.log("%s %s/%s%s", method, dirname, basename, extname); // TODO: add an on/off switch for this logging
 
+    if (dirname == "") dirname = "/"; // special case root routes, where the leading and trailing slash are the same
+
     // TODO: add a switch for case (in)sensitivity
     // dirname = dirname.toLowerCase();
     // basename = basename.toLowerCase();

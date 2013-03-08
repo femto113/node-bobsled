@@ -9,11 +9,15 @@ var path = "/" + Math.floor(Math.random() * 1024 * 1024).toString(32);
 var slugs = ["hello earth", "The Éx†èñdéd Chàrácte® Test™"];
 
 var server = new bobsled.Bobsled(opts);
+
+server.routes.GET['/']['root_test'] = function (pathinfo, request, response) { server.jsonResponder(slugs, response); }
+
 server.routes.GET[path] = {
   "*.json": function (pathinfo, request, response) {
     server.jsonResponder(slugs, response);
   }
 };
+
 if ("template_config" in opts) {
   server.addTemplate(__dirname + "/" + "index.html");
   server.addTemplate(__dirname + "/" + "partial.html");
@@ -29,7 +33,10 @@ server.start();
 process.nextTick(function () {
   // now fire off some client requests and validate the responses
   var http = require("http"), assert = require("assert"), url = require("url");
-  var tests = [ { hostname: "localhost", port: opts.port, path: path + "/whatever.json" } ];
+  var tests = [
+    { hostname: "localhost", port: opts.port, path: "/root_test" },
+    { hostname: "localhost", port: opts.port, path: path + "/whatever.json" }
+  ];
   // TODO test static routing
   if ("template_config" in opts) {
     // test templates
